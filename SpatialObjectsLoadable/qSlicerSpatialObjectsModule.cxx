@@ -135,7 +135,7 @@ void qSlicerSpatialObjectsModule::setup()
   coreIOManager->registerIO(
     new qSlicerSpatialObjectsReader(spatialObjectsLogic, this));
   coreIOManager->registerIO(new qSlicerNodeWriter(
-    "SpatialObjects", qSlicerIO::SpatialObjectFile,
+    "SpatialObjects", QString("SpatialObjectFile"),
     QStringList() << "vtkMRMLSpatialObjectsNode", this));
 }
 
