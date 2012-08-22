@@ -189,7 +189,7 @@ int vtkMRMLSpatialObjectsStorageNode::ReadDataInternal(vtkMRMLNode *refNode)
         const double* axesRatio = currTube->GetSpacing();
 
         int index = 0;
-        typename std::vector<TubePointType>::iterator  tubePointIterator;
+        std::vector<TubePointType>::iterator  tubePointIterator;
         for (tubePointIterator = currTube->GetPoints().begin();
              tubePointIterator != currTube->GetPoints().end();
              ++tubePointIterator, ++pointID, ++index)
