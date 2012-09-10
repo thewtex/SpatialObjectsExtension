@@ -40,10 +40,6 @@ class VTK_SLICER_SPATIALOBJECTS_MODULE_MRML_EXPORT
 vtkMRMLSpatialObjectsTubeDisplayNode : public vtkMRMLSpatialObjectsDisplayNode
 {
  public:
-  ///
-  /// Dispaly pipeline
-  vtkTubeFilter* TubeFilter;
-
   static vtkMRMLSpatialObjectsTubeDisplayNode* New();
   vtkTypeMacro(vtkMRMLSpatialObjectsTubeDisplayNode,
                vtkMRMLSpatialObjectsDisplayNode);
@@ -74,12 +70,8 @@ vtkMRMLSpatialObjectsTubeDisplayNode : public vtkMRMLSpatialObjectsDisplayNode
   {return "SpatialObjectsTubeDisplayNode";}
 
   ///
-  /// Sets polydata (usually stored in SpatialObjectsNode)
-  void SetPolyData(vtkPolyData *polyData);
-
-  ///
-  /// Gets resulting PolyData
-  virtual vtkPolyData* GetPolyData();
+  /// Return the polydata that was set by SetInputPolyData
+  virtual vtkPolyData* GetInputPolyData();
 
   ///
   /// Update the pipeline based on this node attributes
@@ -90,32 +82,38 @@ vtkMRMLSpatialObjectsTubeDisplayNode : public vtkMRMLSpatialObjectsDisplayNode
   //----------------------------------------------------------------------------
 
   ///
-  /// Number of tube sides
+  /// The minimum tube radius.
   vtkSetMacro(TubeRadius, double);
   vtkGetMacro(TubeRadius, double);
 
   ///
-  /// Number of tube sides
+  /// Number of tube sides.
   vtkSetMacro(TubeNumberOfSides, int);
   vtkGetMacro(TubeNumberOfSides, int);
 
- protected:
+protected:
   vtkMRMLSpatialObjectsTubeDisplayNode();
   ~vtkMRMLSpatialObjectsTubeDisplayNode();
   vtkMRMLSpatialObjectsTubeDisplayNode(
     const vtkMRMLSpatialObjectsTubeDisplayNode&);
   void operator=(const vtkMRMLSpatialObjectsTubeDisplayNode&);
 
-  ///
+  /// To be reimplemented in subclasses if the input of the pipeline changes
+  virtual void SetInputToPolyDataPipeline(vtkPolyData* polyData);
+
+  /// Return the polydata that is processed by the display node.
+  /// This is the polydata that needs to be connected with the mappers.
+  virtual vtkAlgorithmOutput* GetOutputPort();
+
   /// Properties
-  int TubeNumberOfSides;
+  int    TubeNumberOfSides;
   double TubeRadius;
 
   /// Pipeline
   vtkAssignAttribute* amontAssignAttribute;
   vtkAssignAttribute* avalAssignAttribute;
-
-
+  /// Creates with a tube for every point based on the radius.
+  vtkTubeFilter*      TubeFilter;
 };
 
 #endif

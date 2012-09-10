@@ -117,22 +117,6 @@ void vtkMRMLSpatialObjectsNode::PrintSelf(ostream& os, vtkIndent indent)
   Superclass::PrintSelf(os,indent);
 }
 
-#include <vtkTubeFilter.h>
-#include <vtkPointData.h>
-//------------------------------------------------------------------------------
-void vtkMRMLSpatialObjectsNode::ProcessMRMLEvents(vtkObject *caller,
-                                                  unsigned long event,
-                                                  void *callData )
-{
-  if (this->PolyData == vtkPolyData::SafeDownCast(caller) &&
-      event ==  vtkCommand::ModifiedEvent)
-    {
-    this->SetPolyData(this->PolyData);
-    }
-
-  Superclass::ProcessMRMLEvents(caller, event, callData);
-}
-
 //------------------------------------------------------------------------------
 void vtkMRMLSpatialObjectsNode::UpdateScene(vtkMRMLScene *scene)
 {
@@ -152,14 +136,13 @@ void vtkMRMLSpatialObjectsNode::UpdateScene(vtkMRMLScene *scene)
 //------------------------------------------------------------------------------
 void vtkMRMLSpatialObjectsNode::UpdateReferences()
 {
-  int i = 0;
-  for(i = 0; i < this->GetNumberOfDisplayNodes(); ++i)
+  for(int ii = 0; ii < this->GetNumberOfDisplayNodes(); ++ii)
     {
     vtkMRMLSpatialObjectsDisplayNode *node = vtkMRMLSpatialObjectsDisplayNode::
-      SafeDownCast(this->GetNthDisplayNode(i));
+      SafeDownCast(this->GetNthDisplayNode(ii));
     if (node)
       {
-      node->SetPolyData(this->GetFilteredPolyData());
+      node->SetInputPolyData(this->GetFilteredPolyData());
       }
     }
 
@@ -184,7 +167,7 @@ GetLineDisplayNode()
     {
     node = vtkMRMLSpatialObjectsLineDisplayNode::SafeDownCast(
              this->GetNthDisplayNode(n));
-    if (node) 
+    if (node)
       {
       break;
       }
@@ -254,7 +237,7 @@ AddLineDisplayNode()
       node->SetAndObserveColorNodeID("vtkMRMLColorTableNodeRainbow");
 
       this->AddAndObserveDisplayNodeID(node->GetID());
-      node->SetPolyData(this->GetFilteredPolyData());
+      node->SetInputPolyData(this->GetFilteredPolyData());
       }
     }
 
@@ -281,7 +264,7 @@ AddTubeDisplayNode()
       node->SetAndObserveColorNodeID("vtkMRMLColorTableNodeRainbow");
 
       this->AddAndObserveDisplayNodeID(node->GetID());
-      node->SetPolyData(this->GetFilteredPolyData());
+      node->SetInputPolyData(this->GetFilteredPolyData());
       }
     }
 
@@ -308,7 +291,7 @@ AddGlyphDisplayNode()
       node->SetAndObserveColorNodeID("vtkMRMLColorTableNodeRainbow");
 
       this->AddAndObserveDisplayNodeID(node->GetID());
-      node->SetPolyData(this->GetFilteredPolyData());
+      node->SetInputPolyData(this->GetFilteredPolyData());
       }
     }
 
@@ -316,9 +299,9 @@ AddGlyphDisplayNode()
 }
 
 //------------------------------------------------------------------------------
-void vtkMRMLSpatialObjectsNode::SetPolyData(vtkPolyData* polyData)
+void vtkMRMLSpatialObjectsNode::SetAndObservePolyData(vtkPolyData* polyData)
 {
-  vtkMRMLModelNode::SetPolyData(polyData);
+  vtkMRMLModelNode::SetAndObservePolyData(polyData);
 
   if (!polyData)
     {
@@ -342,7 +325,7 @@ void vtkMRMLSpatialObjectsNode::SetPolyData(vtkPolyData* polyData)
     this->ShuffledIds->SetValue(i, idVector[i]);
     }
 
-  float subsamplingRatio = 1.;
+  float subsamplingRatio = 1.f;
   this->SetSubsamplingRatio(subsamplingRatio);
   this->UpdateSubsampling();
 }
@@ -391,21 +374,21 @@ void vtkMRMLSpatialObjectsNode::UpdateSubsampling()
   vtkMRMLSpatialObjectsDisplayNode *node = this->GetLineDisplayNode();
   if (node != NULL)
     {
-    node->SetPolyData(this->GetFilteredPolyData());
+    node->SetInputPolyData(this->GetFilteredPolyData());
     }
 
   node = this->GetTubeDisplayNode();
   if (node != NULL)
     {
-    node->SetPolyData(this->GetFilteredPolyData());
+    node->SetInputPolyData(this->GetFilteredPolyData());
     }
   node = this->GetGlyphDisplayNode();
   if (node != NULL)
     {
-    node->SetPolyData(this->GetFilteredPolyData());
+    node->SetInputPolyData(this->GetFilteredPolyData());
     }
 
-  this->InvokeEvent(vtkMRMLDisplayableNode::PolyDataModifiedEvent, this);
+  this->InvokeEvent(vtkMRMLModelNode::PolyDataModifiedEvent, this);
 }
 
 //------------------------------------------------------------------------------
@@ -428,7 +411,7 @@ vtkMRMLStorageNode* vtkMRMLSpatialObjectsNode::CreateDefaultStorageNode()
 void vtkMRMLSpatialObjectsNode::CreateDefaultDisplayNodes()
 {
   vtkDebugMacro("vtkMRMLSpatialObjectsNode::CreateDefaultDisplayNodes");
-  
+
   vtkMRMLSpatialObjectsDisplayNode *sodn = this->AddLineDisplayNode();
   sodn->SetVisibility(1);
   sodn = this->AddTubeDisplayNode();

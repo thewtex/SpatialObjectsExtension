@@ -65,14 +65,6 @@ public:
   {return "SpatialObjectsLineDisplayNode";}
 
   ///
-  /// Sets polydata for line input [usually stored in SpatialObjectsNode]
-  void SetPolyData(vtkPolyData *linePolyData);
-
-  ///
-  /// Gets resulting PolyData
-  virtual vtkPolyData* GetPolyData();
-
-  ///
   /// Update the pipeline based on this node attributes
   virtual void UpdatePolyDataPipeline();
 

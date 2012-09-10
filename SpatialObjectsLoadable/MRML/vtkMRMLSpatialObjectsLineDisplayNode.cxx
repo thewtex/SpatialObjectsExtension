@@ -20,11 +20,12 @@
 #include "vtkObjectFactory.h"
 
 // VTK includes
+#include "vtkAssignAttribute.h"
 #include "vtkCallbackCommand.h"
 #include "vtkCellData.h"
 #include "vtkPointData.h"
-#include <vtkPolyData.h>
-#include <vtkSmartPointer.h>
+#include "vtkPolyData.h"
+#include "vtkSmartPointer.h"
 
 // MRML includes
 #include "vtkMRMLScene.h"
@@ -46,7 +47,6 @@ vtkMRMLSpatialObjectsLineDisplayNode::vtkMRMLSpatialObjectsLineDisplayNode()
 vtkMRMLSpatialObjectsLineDisplayNode::~vtkMRMLSpatialObjectsLineDisplayNode()
 {
   this->RemoveObservers (vtkCommand::ModifiedEvent, this->MRMLCallbackCommand);
-
 }
 
 //------------------------------------------------------------------------------
@@ -75,28 +75,14 @@ void vtkMRMLSpatialObjectsLineDisplayNode::PrintSelf(ostream& os,
 }
 
 //------------------------------------------------------------------------------
-void vtkMRMLSpatialObjectsLineDisplayNode::
-SetPolyData(vtkPolyData *linePolyData)
-{
-  if (this->PolyData != linePolyData)
-    {
-    Superclass::SetPolyData(linePolyData);
-    }
-}
-
-//------------------------------------------------------------------------------
-vtkPolyData* vtkMRMLSpatialObjectsLineDisplayNode::GetPolyData()
-{
-  return this->OutputPolyData;
-}
-
-//------------------------------------------------------------------------------
 void vtkMRMLSpatialObjectsLineDisplayNode::UpdatePolyDataPipeline() 
 {
-  if (!this->PolyData || !this->Visibility)
+  if (!this->GetInputPolyData() || !this->Visibility)
     {
     return;
     }
+
+  this->Superclass::UpdatePolyDataPipeline();
 
   // Set display properties according to the
   // line display properties node
@@ -104,50 +90,33 @@ void vtkMRMLSpatialObjectsLineDisplayNode::UpdatePolyDataPipeline()
     SpatialObjectsDisplayPropertiesNode =
       this->GetSpatialObjectsDisplayPropertiesNode();
 
-  vtkPolyData* IntermediatePolyData = this->PolyData;
-
   if (SpatialObjectsDisplayPropertiesNode != NULL)
     {
-    if (this->GetColorMode() ==
+    const int colorMode = this->GetColorMode();
+    if (colorMode ==
           vtkMRMLSpatialObjectsDisplayNode::colorModeSolid)
       {
       this->ScalarVisibilityOff();
 
-      vtkMRMLNode* ColorNode =
+      vtkMRMLNode* colorNode =
         this->GetScene()->GetNodeByID("vtkMRMLColorTableNodeFullRainbow");
-      if (ColorNode)
+      if (colorNode)
         {
-        this->SetAndObserveColorNodeID(ColorNode->GetID());
+        this->SetAndObserveColorNodeID(colorNode->GetID());
         }
 
       this->AutoScalarRangeOff();
       this->SetScalarRange(0, 255);
       }
-    else if (this->GetColorMode() ==
+    else if (colorMode ==
                vtkMRMLSpatialObjectsDisplayNode::colorModeScalarData)
       {
-      /*vtkDebugMacro("LINE SCALAR NAME: "
-                    << this->SecondActiveScalarName
-                    << std::endl);*/
-
       this->ScalarVisibilityOn();
-
-      IntermediatePolyData = this->PolyData;
-      IntermediatePolyData->GetPointData()->
-        SetActiveScalars(this->GetActiveScalarName());
-
-      IntermediatePolyData->Update();
+      this->AssignAttribute->Update();
       }
     }
   else
     {
     this->ScalarVisibilityOff();
     }
-
-  if(this->ActiveScalarName != NULL)
-    std::cout << "ScalarMode: " << this->ActiveScalarName << std::endl;
-  std::cout << "RangeUp: " << IntermediatePolyData->GetScalarRange()[0]
-            << std::endl;
-
-  this->OutputPolyData = IntermediatePolyData;
 }

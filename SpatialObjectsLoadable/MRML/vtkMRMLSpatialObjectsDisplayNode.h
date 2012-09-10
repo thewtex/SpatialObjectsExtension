@@ -77,12 +77,6 @@ public:
   /// Update the stored reference to another node in the scene
   virtual void UpdateReferenceID(const char *oldID, const char *newID);
 
-  ///
-  /// alternative method to propagate events generated in Display nodes
-  virtual void ProcessMRMLEvents(vtkObject*     /*caller*/,
-                                 unsigned long  /*event*/,
-                                 void*          /*callData*/);
-
   //----------------------------------------------------------------------------
   /// Display Information: Geometry to display (not mutually exclusive)
   //----------------------------------------------------------------------------
@@ -154,7 +148,7 @@ public:
 
   ///
   /// Set spatial object display properties MRML node object for vessels glyph.
-  void SetAndObserveSpatialObjectsDisplayPropertiesNodeID(const char *ID);
+  void SetAndObserveSpatialObjectsDisplayPropertiesNodeID(const char *id);
 
   ///
   /// Get ID of spatial object display properties
@@ -178,8 +172,6 @@ public:
 
   static std::vector<int> GetSupportedColorModes();
   int ColorMode;
-
-  vtkPolyData* OutputPolyData;
 };
 
 #endif

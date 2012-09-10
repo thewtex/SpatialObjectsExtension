@@ -177,10 +177,6 @@ vtkSlicerSpatialObjectsLogic::AddSpatialObject(const char* filename)
     spatialObjectsNode->AddAndObserveDisplayNodeID(displayTubeNode->GetID());
     spatialObjectsNode->AddAndObserveDisplayNodeID(displayGlyphNode->GetID());
 
-    displayLineNode->SetPolyData(spatialObjectsNode->GetPolyData());
-    displayTubeNode->SetPolyData(spatialObjectsNode->GetPolyData());
-    displayGlyphNode->SetPolyData(spatialObjectsNode->GetPolyData());
-
     this->GetMRMLScene()->AddNode(spatialObjectsNode.GetPointer());
     this->Modified();
     }

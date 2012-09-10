@@ -16,7 +16,6 @@
   This file was originally developed by Michael Jeulin-L, Kitware Inc.
 
 ==============================================================================*/
-
 /// vtkMRMLSpatialObjectsGlyphDisplayNode -
 /// MRML node to represent display properties for vessels.
 ///
@@ -66,14 +65,6 @@ public:
   {return "SpatialObjectsGlyphDisplayNode";}
 
   ///
-  /// Sets polydata (usually stored in SpatialObjectsNode)
-  void SetPolyData(vtkPolyData *polyData);
-
-  ///
-  /// Gets resulting PolyData
-  virtual vtkPolyData* GetPolyData();
-
-  ///
   /// Update the pipeline based on this node attributes
   virtual void UpdatePolyDataPipeline();
 
@@ -83,6 +74,10 @@ public:
   vtkMRMLSpatialObjectsGlyphDisplayNode(
     const vtkMRMLSpatialObjectsGlyphDisplayNode&);
   void operator=(const vtkMRMLSpatialObjectsGlyphDisplayNode&);
+
+  /// Return the polydata that is processed by the display node.
+  /// This is the polydata that needs to be connected with the mappers.
+  virtual vtkAlgorithmOutput* GetOutputPort();
 
   /// Pipeline
   vtkGlyph3DMapper* Glyph3DMapper;

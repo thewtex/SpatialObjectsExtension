@@ -38,7 +38,6 @@ vtkCxxSetReferenceStringMacro(vtkMRMLSpatialObjectsDisplayNode,
 vtkMRMLSpatialObjectsDisplayNode::vtkMRMLSpatialObjectsDisplayNode()
 {
   this->BackfaceCulling = 0;
-  this->OutputPolyData = NULL;
 
   // Enumerated
   this->ColorMode = this->colorModeSolid;
@@ -129,21 +128,6 @@ void vtkMRMLSpatialObjectsDisplayNode::PrintSelf(ostream& os, vtkIndent indent)
 }
 
 //------------------------------------------------------------------------------
-void vtkMRMLSpatialObjectsDisplayNode::ProcessMRMLEvents(vtkObject *caller,
-                                                         unsigned long event,
-                                                         void *callData)
-{
-  Superclass::ProcessMRMLEvents(caller, event, callData);
-
-  vtkMRMLSpatialObjectsNode *node =
-    vtkMRMLSpatialObjectsNode::SafeDownCast(caller);
-  if (node && (event == vtkMRMLDisplayableNode::PolyDataModifiedEvent))
-    {
-    this->SetPolyData(node->GetFilteredPolyData());
-    }
-}
-
-//------------------------------------------------------------------------------
 void vtkMRMLSpatialObjectsDisplayNode::UpdateScene(vtkMRMLScene *scene)
 {
    Superclass::UpdateScene(scene);
@@ -223,9 +207,9 @@ SetAndObserveSpatialObjectsDisplayPropertiesNodeID(const char *id )
 
   //The new SpatialObjectsDisplayPropertiesNode can have a different setting
   // on the properties so we emit the event that the polydata has been modified.
-  if (cnode && this->PolyData)
+  if (cnode)
     {
-    this->InvokeEvent(vtkMRMLDisplayableNode::PolyDataModifiedEvent, this);
+    this->InvokeEvent(vtkMRMLModelNode::PolyDataModifiedEvent, this);
     }
 }
 

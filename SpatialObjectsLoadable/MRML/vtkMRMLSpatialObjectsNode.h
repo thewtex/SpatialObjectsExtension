@@ -18,7 +18,7 @@
 ==============================================================================*/
 
 /// vtkMRMLSpatialObjectsNode -
-/// MRML node to represent vessels data structure.
+/// MRML node to represent SpatialObject structures.
 ///
 /// vtkMRMLSpatialObjects nodes contain trajectories ("tubes")
 /// from vessels, internally represented as vtkPolyData.
@@ -73,12 +73,6 @@ public:
   /// Copy the node's attributes to this object
   /// Does NOT copy: ID, FilePrefix, Name, ID
   virtual void Copy(vtkMRMLNode *node);
-
-  ///
-  /// alternative method to propagate events generated in Display nodes
-  virtual void ProcessMRMLEvents(vtkObject*     /*caller*/,
-                                 unsigned long  /*event*/,
-                                 void *         /*callData*/);
 
   ///
   /// Updates this node if it depends on other nodes
@@ -144,6 +138,9 @@ public:
   vtkGetMacro(SpatialObject, TubeNetType*);
   vtkSetMacro(SpatialObject, TubeNetType*);
 
+  /// Set and observe poly data for this model
+  virtual void SetAndObservePolyData(vtkPolyData* polyData);
+
 protected:
   vtkMRMLSpatialObjectsNode();
   ~vtkMRMLSpatialObjectsNode();
@@ -157,8 +154,6 @@ protected:
   TubeNetType* SpatialObject;
 
   vtkIdTypeArray* ShuffledIds;
-
-  virtual void SetPolyData(vtkPolyData* polyData);
 
   virtual void PrepareSubsampling();
   virtual void UpdateSubsampling();

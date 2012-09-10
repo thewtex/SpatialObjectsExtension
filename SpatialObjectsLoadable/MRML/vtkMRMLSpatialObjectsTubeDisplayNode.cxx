@@ -25,11 +25,12 @@
 #include "vtkCellData.h"
 #include "vtkPointData.h"
 
+#include "vtkAssignAttribute.h"
 #include "vtkPolyDataTensorToColor.h"
 #include "vtkTubeFilter.h"
 
 #include "vtkMRMLScene.h"
-#include "vtkMRMLNode.h"
+#include "vtkMRMLModelDisplayNode.h"
 #include "vtkMRMLSpatialObjectsDisplayPropertiesNode.h"
 #include "vtkMRMLSpatialObjectsTubeDisplayNode.h"
 #include "vtkPolyDataColorLinesByOrientation.h"
@@ -44,6 +45,7 @@ vtkMRMLSpatialObjectsTubeDisplayNode::vtkMRMLSpatialObjectsTubeDisplayNode()
   this->ColorMode = vtkMRMLSpatialObjectsDisplayNode::colorModeSolid;
 
   this->TubeFilter = vtkTubeFilter::New();
+  this->TubeFilter->SetVaryRadiusToVaryRadiusByAbsoluteScalar();
   this->TubeNumberOfSides = 6;
   this->TubeRadius = 0.5;
 
@@ -54,11 +56,13 @@ vtkMRMLSpatialObjectsTubeDisplayNode::vtkMRMLSpatialObjectsTubeDisplayNode()
 
   // Pipeline
   this->amontAssignAttribute = vtkAssignAttribute::New();
+  this->amontAssignAttribute->Assign("TubeRadius",
+                                     vtkDataSetAttributes::SCALARS,
+                                     vtkAssignAttribute::POINT_DATA);
   this->TubeFilter->SetInputConnection(
     this->amontAssignAttribute->GetOutputPort());
 
-  this->avalAssignAttribute = vtkAssignAttribute::New();
-  this->avalAssignAttribute->SetInputConnection(
+  this->AssignAttribute->SetInputConnection(
     this->TubeFilter->GetOutputPort());
 }
 
@@ -68,7 +72,6 @@ vtkMRMLSpatialObjectsTubeDisplayNode::~vtkMRMLSpatialObjectsTubeDisplayNode()
   this->RemoveObservers(vtkCommand::ModifiedEvent, this->MRMLCallbackCommand);
   this->amontAssignAttribute->Delete();
   this->TubeFilter->Delete();
-  this->avalAssignAttribute->Delete();
 }
 
 //------------------------------------------------------------------------------
@@ -90,25 +93,25 @@ void vtkMRMLSpatialObjectsTubeDisplayNode::ReadXMLAttributes(const char** atts)
 
   const char* attName;
   const char* attValue;
-  while (*atts != NULL) 
+  while (*atts != NULL)
     {
     attName = *(atts++);
     attValue = *(atts++);
 
-    if (!strcmp(attName, "tubeRadius")) 
+    if (!strcmp(attName, "tubeRadius"))
       {
       std::stringstream ss;
       ss << attValue;
       ss >> this->TubeRadius;
       }
 
-    if (!strcmp(attName, "tubeNumberOfSides")) 
+    if (!strcmp(attName, "tubeNumberOfSides"))
       {
       std::stringstream ss;
       ss << attValue;
       ss >> this->TubeNumberOfSides;
       }
-    }  
+    }
 
   this->EndModify(disabledModify);
 }
@@ -141,58 +144,32 @@ PrintSelf(ostream& os, vtkIndent indent)
 }
 
 //------------------------------------------------------------------------------
-void vtkMRMLSpatialObjectsTubeDisplayNode::SetPolyData(vtkPolyData* polyData)
+void vtkMRMLSpatialObjectsTubeDisplayNode::SetInputToPolyDataPipeline(vtkPolyData* polyData)
 {
-  if (this->PolyData != polyData &&
-      this->TubeFilter &&
-      this->amontAssignAttribute &&
-      this->avalAssignAttribute
-      )
-    {
-    Superclass::SetPolyData(polyData);
-
-    this->amontAssignAttribute->SetInput(polyData);
-    this->amontAssignAttribute->Assign("TubeRadius",
-                                       vtkDataSetAttributes::SCALARS,
-                                       vtkAssignAttribute::POINT_DATA);
-    this->TubeFilter->SetVaryRadiusToVaryRadiusByAbsoluteScalar();
-    this->TubeFilter->SetInputConnection(amontAssignAttribute->GetOutputPort());
-    this->avalAssignAttribute->SetInputConnection(TubeFilter->GetOutputPort());
-
-    this->SetTubeNumberOfSides(this->TubeFilter->GetNumberOfSides());
-    this->SetTubeRadius(this->TubeFilter->GetRadius());
-    }
+  this->amontAssignAttribute->SetInput(polyData);
 }
 
 //------------------------------------------------------------------------------
-vtkPolyData* vtkMRMLSpatialObjectsTubeDisplayNode::GetPolyData()
+vtkPolyData* vtkMRMLSpatialObjectsTubeDisplayNode::GetInputPolyData()
 {
-  if (this->TubeFilter && this->TubeFilter->GetInput())
-    {
-    if(this->TubeFilter->GetOutput() &&
-       this->TubeFilter->GetOutput()->GetPointData() &&
-       this->TubeFilter->GetOutput()->GetPointData()->GetScalars())
-      {
-      vtkDebugMacro("Upper Bound Scalar value: " <<
-                    this->TubeFilter->GetOutput()->
-                      GetPointData()->GetScalars()->GetMaxNorm());
-      }
-
-    return this->OutputPolyData;
-    }
-  else
-    {
-    return NULL;
-    }
+  return vtkPolyData::SafeDownCast(this->amontAssignAttribute->GetInput());
 }
 
 //------------------------------------------------------------------------------
-void vtkMRMLSpatialObjectsTubeDisplayNode::UpdatePolyDataPipeline() 
+vtkAlgorithmOutput* vtkMRMLSpatialObjectsTubeDisplayNode::GetOutputPort()
 {
-  if (!this->PolyData || !this->Visibility)
+  return this->AssignAttribute->GetOutputPort();
+}
+
+//------------------------------------------------------------------------------
+void vtkMRMLSpatialObjectsTubeDisplayNode::UpdatePolyDataPipeline()
+{
+  if (!this->GetInputPolyData() || !this->Visibility)
     {
     return;
     }
+
+  this->Superclass::UpdatePolyDataPipeline();
 
   // Set display properties according to the
   // line display properties node
@@ -200,54 +177,41 @@ void vtkMRMLSpatialObjectsTubeDisplayNode::UpdatePolyDataPipeline()
     SpatialObjectsDisplayPropertiesNode =
       this->GetSpatialObjectsDisplayPropertiesNode();
 
-  this->amontAssignAttribute->SetInput(this->PolyData);
+  const char * activeScalarName = this->GetActiveScalarName();
+  this->AssignAttribute->Assign(activeScalarName,
+                                vtkDataSetAttributes::SCALARS,
+                                vtkAssignAttribute::POINT_DATA);
 
   if (SpatialObjectsDisplayPropertiesNode != NULL)
     {
-    // set line coloring
-    if (this->GetColorMode() ==
+    const int colorMode = this->GetColorMode();
+    if (colorMode ==
           vtkMRMLSpatialObjectsDisplayNode::colorModeSolid)
       {
       this->ScalarVisibilityOff();
 
-      vtkMRMLNode* ColorNode =
+      vtkMRMLNode* colorNode =
         this->GetScene()->GetNodeByID("vtkMRMLColorTableNodeFullRainbow");
-      if (ColorNode)
+      if (colorNode)
         {
-        this->SetAndObserveColorNodeID(ColorNode->GetID());
+        this->SetAndObserveColorNodeID(colorNode->GetID());
         }
 
       this->AutoScalarRangeOff();
       this->SetScalarRange(0, 255);
       }
 
-    else if (this->GetColorMode() ==
+    else if (colorMode ==
                vtkMRMLSpatialObjectsDisplayNode::colorModeScalarData)
       {
       this->ScalarVisibilityOn();
-
-      this->PolyData->GetPointData()->
-        SetActiveScalars(this->GetActiveScalarName());
-
-      this->amontAssignAttribute->Assign("TubeRadius",
-                                         vtkDataSetAttributes::SCALARS,
-                                         vtkAssignAttribute::POINT_DATA);
-
-      this->TubeFilter->Update();
-
-      this->avalAssignAttribute->Assign(this->GetActiveScalarName(),
-                                        vtkDataSetAttributes::SCALARS,
-                                        vtkAssignAttribute::POINT_DATA);
-
-      this->avalAssignAttribute->Update();
+      this->TubeFilter->SetRadius(this->GetTubeRadius());
+      this->TubeFilter->SetNumberOfSides(this->GetTubeNumberOfSides());
+      this->AssignAttribute->Update();
       }
     }
   else
     {
     this->ScalarVisibilityOff();
     }
-
-  // Should be aval
-  this->OutputPolyData =
-    vtkPolyData::SafeDownCast(this->avalAssignAttribute->GetOutput());
 }

@@ -78,48 +78,20 @@ void vtkMRMLSpatialObjectsGlyphDisplayNode::PrintSelf(ostream& os,
 }
 
 //------------------------------------------------------------------------------
-void vtkMRMLSpatialObjectsGlyphDisplayNode::
-SetPolyData(vtkPolyData* polyData)
+vtkAlgorithmOutput* vtkMRMLSpatialObjectsGlyphDisplayNode::GetOutputPort()
 {
-  if ((this->Glyph3DMapper) && polyData != this->PolyData)
-    {
-    Superclass::SetPolyData(polyData);
-
-    /*vtkConeSource *squad = vtkConeSource::New();
-    squad->SetHeight(1.0);
-    squad->SetRadius(1.0);
-    squad->SetResolution(50);
-    squad->SetDirection(0.0,0.0,1.0);
-
-    this->Glyph3DMapper->SetInputConnection(calc->GetOutputPort());
-    this->Glyph3DMapper->SetOrientationArray("orientation");
-    this->Glyph3DMapper->SetOrientationModeToRotation();
-    this->Glyph3DMapper->SetScaleFactor(0.01);
-    this->Glyph3DMapper->SetSourceConnection(squad->GetOutputPort());*/
-
-    /*this->Glyph3DMapper->
-      SetInputConnection(polyData->GetSource()->GetOutputPort());*/
-    }
-}
-
-//------------------------------------------------------------------------------
-vtkPolyData* vtkMRMLSpatialObjectsGlyphDisplayNode::GetPolyData()
-{
-  if (!this->Glyph3DMapper)
-    {
-    return 0;
-    }
-
-  return this->PolyData;//Glyph3DMapper->GetSource();
+  return this->Glyph3DMapper->GetOutputPort();
 }
 
 //------------------------------------------------------------------------------
 void vtkMRMLSpatialObjectsGlyphDisplayNode::UpdatePolyDataPipeline() 
 {
-  if (!this->PolyData || !this->Visibility)
+  if (!this->GetInputPolyData()|| !this->Visibility)
     {
     return;
     }
+
+  this->Superclass::UpdatePolyDataPipeline();
 
   /*if (this->Glyph3DMapper)
     {
